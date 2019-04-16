@@ -13,6 +13,9 @@ func main() {
 	router.GET("/deploy", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		serveReverseProxy("http://localhost:9000/deploy", w, r)
 	})
+	router.GET("/health", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		serveReverseProxy("http://localhost:9000/health", w, r)
+	})
 
 	http.ListenAndServe(":80", router)
 }
