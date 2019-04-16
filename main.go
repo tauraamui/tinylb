@@ -1,27 +1,26 @@
 package main
 
 import (
-	"log"
-	"net/http"
-	"net/http/httputil"
 	"net/url"
+
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 func main() {
-	origin, _ := url.Parse("http://localhost:9001")
+	e := echo.New()
+	e.Use(middleware.Logger())
 
-	director := func(req *http.Request) {
-		req.Header.Add("X-Forwarded-Host", req.Host)
-		req.Header.Add("X-Origin-Host", origin.Host)
-		req.URL.Scheme = "http"
-		req.URL.Host = origin.Host
+	deployDaemonURL, err := url.Parse("http://localhost:9001")
+	if err != nil {
+		e.Logger.Fatal(err)
 	}
 
-	proxy := &httputil.ReverseProxy{Director: director}
+	targets := []*middleware.ProxyTarget{
+		{URL: deployDaemonURL},
+	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		proxy.ServeHTTP(w, r)
-	})
+	e.Group("/deploy", middleware.Proxy(middleware.NewRandomBalancer(targets)))
 
-	log.Fatal(http.ListenAndServe(":80", nil))
+	e.Logger.Fatal(e.Start(":80"))
 }
