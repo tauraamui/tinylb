@@ -25,8 +25,18 @@ func singleJoiningSlash(a, b string) string {
 
 func main() {
 	router := httprouter.New()
-	origin, _ := url.Parse("http://localhost:9001")
-	path := "/*catchall"
+
+	forwardFromTo("GET", "/health", "http://localhost:9001", router)
+	forwardFromTo("POST", "/deploy", "http://localhost:9001", router)
+
+	err := http.ListenAndServe(":80", router)
+	if err != nil {
+		logging.ErrorAndExit(err.Error())
+	}
+}
+
+func forwardFromTo(method string, uri string, destination string, router *httprouter.Router) {
+	origin, _ := url.Parse(destination)
 
 	reverseProxy := httputil.NewSingleHostReverseProxy(origin)
 
@@ -36,7 +46,7 @@ func main() {
 		req.URL.Scheme = origin.Scheme
 		req.URL.Host = origin.Host
 
-		wildcardIndex := strings.IndexAny(path, "*")
+		wildcardIndex := strings.IndexAny(uri, "*")
 		proxyPath := singleJoiningSlash(origin.Path, req.URL.Path[wildcardIndex:])
 		if strings.HasSuffix(proxyPath, "/") && len(proxyPath) > 1 {
 			proxyPath = proxyPath[:len(proxyPath)-1]
@@ -44,12 +54,7 @@ func main() {
 		req.URL.Path = proxyPath
 	}
 
-	router.Handle("GET", path, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	router.Handle(method, uri, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		reverseProxy.ServeHTTP(w, r)
 	})
-
-	err := http.ListenAndServe(":80", router)
-	if err != nil {
-		logging.ErrorAndExit(err.Error())
-	}
 }
