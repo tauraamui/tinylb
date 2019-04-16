@@ -4,39 +4,52 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 
 	"github.com/tacusci/logging"
 
 	"github.com/julienschmidt/httprouter"
 )
 
-func main() {
-	router := httprouter.New()
-	router.GET("/deploy", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		serveReverseProxy("http://localhost:9000/deploy", w, r)
-	})
-	router.GET("/health", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-		logging.Info("Recieved health request")
-		serveReverseProxy("http://localhost:9000/health", w, r)
-	})
-
-	http.ListenAndServe(":80", router)
+func singleJoiningSlash(a, b string) string {
+	aslash := strings.HasSuffix(a, "/")
+	bslash := strings.HasPrefix(b, "/")
+	switch {
+	case aslash && bslash:
+		return a + b[1:]
+	case !aslash && !bslash:
+		return a + "/" + b
+	}
+	return a + b
 }
 
-// Serve a reverse proxy for a given url
-func serveReverseProxy(target string, w http.ResponseWriter, req *http.Request) {
-	// parse the url
-	url, _ := url.Parse(target)
+func main() {
+	router := httprouter.New()
+	origin, _ := url.Parse("http://localhost:9001")
+	path := "/*catchall"
 
-	// create the reverse proxy
-	proxy := httputil.NewSingleHostReverseProxy(url)
+	reverseProxy := httputil.NewSingleHostReverseProxy(origin)
 
-	// Update the headers to allow for SSL redirection
-	req.URL.Host = url.Host
-	req.URL.Scheme = url.Scheme
-	req.Header.Set("X-Forwarded-Host", req.Header.Get("Host"))
-	req.Host = url.Host
+	reverseProxy.Director = func(req *http.Request) {
+		req.Header.Add("X-Forwarded-Host", req.Host)
+		req.Header.Add("X-Origin-Host", origin.Host)
+		req.URL.Scheme = origin.Scheme
+		req.URL.Host = origin.Host
 
-	// Note that ServeHttp is non blocking and uses a go routine under the hood
-	proxy.ServeHTTP(w, req)
+		wildcardIndex := strings.IndexAny(path, "*")
+		proxyPath := singleJoiningSlash(origin.Path, req.URL.Path[wildcardIndex:])
+		if strings.HasSuffix(proxyPath, "/") && len(proxyPath) > 1 {
+			proxyPath = proxyPath[:len(proxyPath)-1]
+		}
+		req.URL.Path = proxyPath
+	}
+
+	router.Handle("GET", path, func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		reverseProxy.ServeHTTP(w, r)
+	})
+
+	err := http.ListenAndServe(":80", router)
+	if err != nil {
+		logging.ErrorAndExit(err.Error())
+	}
 }
