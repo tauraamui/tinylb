@@ -5,6 +5,8 @@ import (
 	"net/http/httputil"
 	"net/url"
 
+	"github.com/tacusci/logging"
+
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -14,6 +16,7 @@ func main() {
 		serveReverseProxy("http://localhost:9000/deploy", w, r)
 	})
 	router.GET("/health", func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+		logging.Info("Recieved health request")
 		serveReverseProxy("http://localhost:9000/health", w, r)
 	})
 
