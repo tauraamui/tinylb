@@ -23,7 +23,7 @@ func main() {
 
 	proxyMappings := []*ProxyMapping{
 		&ProxyMapping{
-			RequestURI: "/webhooks/push",
+			RequestURI: "/webhooks/*",
 			TargetURL:  "http://localhost:9001",
 		},
 	}
