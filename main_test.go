@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"strings"
 	"testing"
@@ -19,6 +20,27 @@ var proxyMappingTests = []struct {
 		reader:            strings.NewReader("proxy /webhooks/* http://localhost:9001"),
 		expectedError:     nil,
 		expectedInterface: &ProxyMapping{RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"},
+	},
+
+	{
+		name:              "Test load proxy mapping fail fail missing request uri field",
+		reader:            strings.NewReader("proxy"),
+		expectedError:     errors.New("config line 1, missing request uri field for proxy mapping"),
+		expectedInterface: nil,
+	},
+
+	{
+		name:              "Test load proxy mapping fail fail missing targert url field",
+		reader:            strings.NewReader("proxy /webhooks/*"),
+		expectedError:     errors.New("config line 1, missing target url field for proxy mapping"),
+		expectedInterface: nil,
+	},
+
+	{
+		name:              "Test load proxy mapping fail fail blank line",
+		reader:            strings.NewReader(""),
+		expectedError:     nil,
+		expectedInterface: nil,
 	},
 }
 
