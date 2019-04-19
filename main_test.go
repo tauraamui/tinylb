@@ -42,6 +42,13 @@ var proxyMappingTests = []struct {
 		expectedError:     nil,
 		expectedInterface: nil,
 	},
+
+	{
+		name:              "Test load proxy mapping fail fail nil io.Reader",
+		reader:            nil,
+		expectedError:     errors.New("io.Reader instance is a nil pointer"),
+		expectedInterface: nil,
+	},
 }
 
 func TestLoadProxyMapping(t *testing.T) {

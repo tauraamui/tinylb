@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -22,6 +23,10 @@ type ProxyMapping struct {
 }
 
 func loadProxyMappings(reader io.Reader) ([]*ProxyMapping, error) {
+
+	if reader == nil {
+		return nil, errors.New("io.Reader instance is a nil pointer")
+	}
 
 	proxyMappings := []*ProxyMapping{}
 
