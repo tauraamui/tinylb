@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"net/url"
 	"os"
 	"strings"
@@ -20,16 +21,11 @@ type ProxyMapping struct {
 	TargetURL  string
 }
 
-func loadProxyMappings() ([]*ProxyMapping, error) {
-	configFile, err := os.Open("tbl.config")
-	if err != nil {
-		return nil, err
-	}
-	defer configFile.Close()
+func loadProxyMappings(reader io.Reader) ([]*ProxyMapping, error) {
 
 	proxyMappings := []*ProxyMapping{}
 
-	scanner := bufio.NewScanner(configFile)
+	scanner := bufio.NewScanner(reader)
 	configLineCount := 0
 	for scanner.Scan() {
 		configLineCount++
@@ -63,7 +59,13 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	proxyMappings, err := loadProxyMappings()
+	configFile, err := os.Open("tbl.config")
+	if err != nil {
+		e.Logger.Fatal(err)
+	}
+	defer configFile.Close()
+
+	proxyMappings, err := loadProxyMappings(configFile)
 	if err != nil {
 		e.Logger.Error(err)
 	}
