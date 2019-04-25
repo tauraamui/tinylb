@@ -116,10 +116,19 @@ func main() {
 			}
 			targets = append(targets, &middleware.ProxyTarget{URL: url})
 			e.Logger.Debug(fmt.Sprintf("Mapping URI group: %s to target endpoint: %s", proxyMapping.RequestURI, proxyMapping.TargetURL))
-			lbGroup := e.Group(proxyMapping.RequestURI, middleware.Proxy(middleware.NewRandomBalancer(targets)))
-			lbGroup.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-				return nil
-			})
+			e.Group(proxyMapping.RequestURI, middleware.ProxyWithConfig(middleware.ProxyConfig{
+				Balancer: middleware.NewRandomBalancer(targets),
+				Skipper: func(c echo.Context) bool {
+					if proxyMapping.DomainContext == "" {
+						return false
+					}
+					if strings.Contains(c.Request().Host, proxyMapping.DomainContext) {
+						return false
+					}
+					return true
+				},
+			}))
+			//e.Group(proxyMapping.RequestURI, middleware.Proxy(middleware.NewRandomBalancer(targets)))
 		}
 
 		e.Logger.Info("Started tinylb...")
