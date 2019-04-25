@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net/url"
@@ -57,9 +58,24 @@ func loadProxyMappings(reader io.Reader) ([]*ProxyMapping, error) {
 	return proxyMappings, nil
 }
 
+type options struct {
+	debug   bool
+	autoSSL bool
+}
+
 func main() {
+
+	opts := &options{}
+	flag.BoolVar(&opts.debug, "dbg", false, "Set/turn on debug mode.")
+	flag.BoolVar(&opts.autoSSL, "autossl", false, "Set/turn on auto ssl")
+
+	flag.Parse()
+
 	e := echo.New()
-	e.Logger.SetLevel(log.DEBUG)
+
+	if opts.debug {
+		e.Logger.SetLevel(log.DEBUG)
+	}
 	e.HideBanner = true
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
@@ -85,12 +101,19 @@ func main() {
 			}
 			targets = append(targets, &middleware.ProxyTarget{URL: url})
 			e.Logger.Debug(fmt.Sprintf("Mapping URI group: %s to target endpoint: %s", proxyMapping.RequestURI, proxyMapping.TargetURL))
-			e.Group(proxyMapping.RequestURI, middleware.Proxy(middleware.NewRandomBalancer(targets)))
+			lbGroup := e.Group(proxyMapping.RequestURI, middleware.Proxy(middleware.NewRandomBalancer(targets)))
+			lbGroup.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+				return nil
+			})
 		}
 
 		e.Logger.Info("Started tinylb...")
 
-		e.Logger.Fatal(e.StartAutoTLS(":443"))
-		//e.Start(":80")
+		if opts.autoSSL {
+			e.Use(middleware.HTTPSRedirect())
+			e.Logger.Fatal(e.StartAutoTLS(":443"))
+		} else {
+			e.Start(":80")
+		}
 	}
 }
