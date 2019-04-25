@@ -75,6 +75,7 @@ func loadProxyMappings(reader io.Reader) ([]*ProxyMapping, error) {
 
 type options struct {
 	debug   bool
+	port    int
 	autoSSL bool
 }
 
@@ -82,6 +83,7 @@ func main() {
 
 	opts := &options{}
 	flag.BoolVar(&opts.debug, "dbg", false, "Set/turn on debug mode.")
+	flag.IntVar(&opts.port, "port", 8080, "Port number to bind (ignored if autossl enabled)")
 	flag.BoolVar(&opts.autoSSL, "autossl", false, "Set/turn on auto ssl")
 
 	flag.Parse()
@@ -128,7 +130,6 @@ func main() {
 					return true
 				},
 			}))
-			//e.Group(proxyMapping.RequestURI, middleware.Proxy(middleware.NewRandomBalancer(targets)))
 		}
 
 		e.Logger.Info("Started tinylb...")
@@ -137,7 +138,7 @@ func main() {
 			e.Use(middleware.HTTPSRedirect())
 			e.Logger.Fatal(e.StartAutoTLS(":443"))
 		} else {
-			e.Start(":80")
+			e.Start(fmt.Sprintf(":%d", opts.port))
 		}
 	}
 }
