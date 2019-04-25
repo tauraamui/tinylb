@@ -42,15 +42,26 @@ func loadProxyMappings(reader io.Reader) ([]*ProxyMapping, error) {
 		configLine := scanner.Text()
 		values := strings.Split(configLine, " ")
 		if len(values) > 0 {
-			if strings.ToLower(values[0]) == "proxy" {
-				if len(values) == 1 {
+			proxyMapping := &ProxyMapping{}
+
+			proxyDirectiveLookupIndex := 0
+			if domainNameRegex.MatchString(strings.ToLower(values[0])) {
+				proxyMapping.DomainContext = values[proxyDirectiveLookupIndex]
+				proxyDirectiveLookupIndex++
+			}
+			if strings.ToLower(values[proxyDirectiveLookupIndex]) == "proxy" {
+				if len(values) == proxyDirectiveLookupIndex+1 {
 					return nil, fmt.Errorf("config line %d, missing request uri field for proxy mapping", configLineCount)
 				}
-				if len(values) > 2 {
-					proxyMappings = append(proxyMappings, &ProxyMapping{RequestURI: values[1], TargetURL: values[2]})
+				if len(values) > proxyDirectiveLookupIndex+2 {
+					proxyMapping.RequestURI = values[proxyDirectiveLookupIndex+1]
+					proxyMapping.TargetURL = values[proxyDirectiveLookupIndex+2]
+					proxyMappings = append(proxyMappings, proxyMapping)
 				} else {
 					return nil, fmt.Errorf("config line %d, missing target url field for proxy mapping", configLineCount)
 				}
+			} else {
+				return nil, fmt.Errorf("config line %d, unknown directive %s", configLineCount, values[0])
 			}
 		}
 	}
