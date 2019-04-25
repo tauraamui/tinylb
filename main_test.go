@@ -23,21 +23,49 @@ var proxyMappingTests = []struct {
 	},
 
 	{
-		name:              "Test load proxy mapping fail fail missing request uri field",
+		name:              "Test load proxy mapping with domain context success",
+		reader:            strings.NewReader("tacusci.com proxy /webhooks/* http://localhost:9001"),
+		expectedError:     nil,
+		expectedInterface: &ProxyMapping{DomainContext: "tacusci.com", RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"},
+	},
+
+	{
+		name:              "Test load proxy mapping with domain context as localhost success",
+		reader:            strings.NewReader("localhost proxy /webhooks/* http://localhost:9001"),
+		expectedError:     nil,
+		expectedInterface: &ProxyMapping{DomainContext: "localhost", RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"},
+	},
+
+	{
+		name:              "Test load proxy mapping with domain context as localhost with port 8000 success",
+		reader:            strings.NewReader("localhost:8000 proxy /webhooks/* http://localhost:9001"),
+		expectedError:     nil,
+		expectedInterface: &ProxyMapping{DomainContext: "localhost:8000", RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"},
+	},
+
+	{
+		name:              "Test load proxy mapping fail missing request uri field",
 		reader:            strings.NewReader("proxy"),
 		expectedError:     errors.New("config line 1, missing request uri field for proxy mapping"),
 		expectedInterface: nil,
 	},
 
 	{
-		name:              "Test load proxy mapping fail fail missing targert url field",
+		name:              "Test load proxy mapping fail missing targert url field",
 		reader:            strings.NewReader("proxy /webhooks/*"),
 		expectedError:     errors.New("config line 1, missing target url field for proxy mapping"),
 		expectedInterface: nil,
 	},
 
 	{
-		name:              "Test load proxy mapping fail fail blank line",
+		name:              "Test load proxy mapping fail unknown command directive",
+		reader:            strings.NewReader("nonesense /webhooks/* http://localhost:9001"),
+		expectedError:     errors.New("config line 1, unknown directive nonesense"),
+		expectedInterface: nil,
+	},
+
+	{
+		name:              "Test load proxy mapping fail blank line",
 		reader:            strings.NewReader(""),
 		expectedError:     nil,
 		expectedInterface: nil,
