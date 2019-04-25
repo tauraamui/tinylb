@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/tacusci/logging"
@@ -18,9 +19,12 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 )
 
+var domainNameRegex = regexp.MustCompile(`([a-zA-Z]+(\.[a-zA-Z]{2,}){1,}|localhost(\:[0-9]+){0,})`)
+
 type ProxyMapping struct {
-	RequestURI string
-	TargetURL  string
+	DomainContext string
+	RequestURI    string
+	TargetURL     string
 }
 
 func loadProxyMappings(reader io.Reader) ([]*ProxyMapping, error) {
