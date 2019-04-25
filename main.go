@@ -83,7 +83,7 @@ func main() {
 
 	opts := &options{}
 	flag.BoolVar(&opts.debug, "dbg", false, "Set/turn on debug mode.")
-	flag.IntVar(&opts.port, "port", 8080, "Port number to bind (ignored if autossl enabled)")
+	flag.IntVar(&opts.port, "p", 8080, "Port number to bind (ignored if autossl enabled)")
 	flag.BoolVar(&opts.autoSSL, "autossl", false, "Set/turn on auto ssl")
 
 	flag.Parse()
