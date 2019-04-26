@@ -101,12 +101,13 @@ func main() {
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
-	defer configFile.Close()
 
 	proxyMappings, err := loadProxyMappings(configFile)
 	if err != nil {
 		e.Logger.Error(err)
 	}
+
+	configFile.Close()
 
 	if len(proxyMappings) > 0 {
 		for _, proxyMapping := range proxyMappings {
