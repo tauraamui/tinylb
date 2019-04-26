@@ -109,24 +109,25 @@ func main() {
 	}
 
 	if len(proxyMappings) > 0 {
-		targets := []*middleware.ProxyTarget{}
-		e.AutoTLSManager.Cache = autocert.DirCache("/var/www/.cache")
 		for _, proxyMapping := range proxyMappings {
+			//anchor the current iteration context of proxyMapping to this version
+			proxyMapping := proxyMapping
+			targets := []*middleware.ProxyTarget{}
 			url, err := url.Parse(proxyMapping.TargetURL)
 			if err != nil {
 				logging.ErrorAndExit(err.Error())
 			}
 			targets = append(targets, &middleware.ProxyTarget{URL: url})
-			e.Logger.Debug(fmt.Sprintf("Mapping URI group: %s to target endpoint: %s", proxyMapping.RequestURI, proxyMapping.TargetURL))
-			e.Group(proxyMapping.RequestURI, middleware.ProxyWithConfig(middleware.ProxyConfig{
-				Balancer: middleware.NewRandomBalancer(targets),
+
+			group := e.Group(proxyMapping.RequestURI)
+			group.Use(middleware.ProxyWithConfig(middleware.ProxyConfig{
+				Balancer: middleware.NewRoundRobinBalancer(targets),
 				Skipper: func(c echo.Context) bool {
-					if proxyMapping.DomainContext == "" {
+					if strings.Compare(c.Request().Host, proxyMapping.DomainContext) == 0 {
+						e.Logger.Debug("Domain context matches request hostname, not skipping...")
 						return false
 					}
-					if strings.Contains(c.Request().Host, proxyMapping.DomainContext) {
-						return false
-					}
+					e.Logger.Debug("Skipping...")
 					return true
 				},
 			}))
@@ -135,10 +136,11 @@ func main() {
 		e.Logger.Info("Started tinylb...")
 
 		if opts.autoSSL {
+			e.AutoTLSManager.Cache = autocert.DirCache("/var/www/.cache")
 			e.Use(middleware.HTTPSRedirect())
 			e.Logger.Fatal(e.StartAutoTLS(":443"))
 		} else {
-			e.Start(fmt.Sprintf(":%d", opts.port))
+			e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", opts.port)))
 		}
 	}
 }
