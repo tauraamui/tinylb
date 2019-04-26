@@ -13,34 +13,48 @@ var proxyMappingTests = []struct {
 	name              string
 	reader            io.Reader
 	expectedError     error
-	expectedInterface *ProxyMapping
+	expectedInterface []*ProxyMapping
 }{
 	{
 		name:              "Test load proxy mapping success",
 		reader:            strings.NewReader("proxy /webhooks/* http://localhost:9001"),
 		expectedError:     nil,
-		expectedInterface: &ProxyMapping{RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"},
+		expectedInterface: []*ProxyMapping{&ProxyMapping{RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"}},
+	},
+
+	{
+		name:              "Test load multiple proxy mappings success",
+		reader:            strings.NewReader("proxy /webhooks/* http://localhost:9001\nproxy /webhooks2/* http://localhost:9002"),
+		expectedError:     nil,
+		expectedInterface: []*ProxyMapping{&ProxyMapping{RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"}, &ProxyMapping{RequestURI: "/webhooks2/*", TargetURL: "http://localhost:9002"}},
 	},
 
 	{
 		name:              "Test load proxy mapping with domain context success",
 		reader:            strings.NewReader("tacusci.com proxy /webhooks/* http://localhost:9001"),
 		expectedError:     nil,
-		expectedInterface: &ProxyMapping{DomainContext: "tacusci.com", RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"},
+		expectedInterface: []*ProxyMapping{&ProxyMapping{DomainContext: "tacusci.com", RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"}},
+	},
+
+	{
+		name:              "Test load multiple proxy mappings with domain context success",
+		reader:            strings.NewReader("tacusci.com proxy /webhooks/* http://localhost:9001\nplace.com proxy /cheese-cake http://localhost:9001"),
+		expectedError:     nil,
+		expectedInterface: []*ProxyMapping{&ProxyMapping{DomainContext: "tacusci.com", RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"}, &ProxyMapping{DomainContext: "place.com", RequestURI: "/cheese-cake", TargetURL: "http://localhost:9001"}},
 	},
 
 	{
 		name:              "Test load proxy mapping with domain context as localhost success",
 		reader:            strings.NewReader("localhost proxy /webhooks/* http://localhost:9001"),
 		expectedError:     nil,
-		expectedInterface: &ProxyMapping{DomainContext: "localhost", RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"},
+		expectedInterface: []*ProxyMapping{&ProxyMapping{DomainContext: "localhost", RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"}},
 	},
 
 	{
 		name:              "Test load proxy mapping with domain context as localhost with port 8000 success",
 		reader:            strings.NewReader("localhost:8000 proxy /webhooks/* http://localhost:9001"),
 		expectedError:     nil,
-		expectedInterface: &ProxyMapping{DomainContext: "localhost:8000", RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"},
+		expectedInterface: []*ProxyMapping{&ProxyMapping{DomainContext: "localhost:8000", RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001"}},
 	},
 
 	{
@@ -86,7 +100,7 @@ func TestLoadProxyMapping(t *testing.T) {
 			assert.Equal(t, tt.expectedError, err)
 			if tt.expectedInterface != nil {
 				assert.NotEmpty(t, proxyMappings)
-				assert.Equal(t, tt.expectedInterface, proxyMappings[0])
+				assert.Equal(t, tt.expectedInterface, proxyMappings)
 			}
 		})
 	}
