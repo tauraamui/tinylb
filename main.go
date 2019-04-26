@@ -97,7 +97,7 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	configFile, err := os.Open("tbl.config")
+	configFile, err := os.Open("tlb.config")
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
