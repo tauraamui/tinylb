@@ -25,6 +25,7 @@ type ProxyMapping struct {
 	DomainContext string
 	RequestURI    string
 	TargetURL     string
+	TargetURI     string
 }
 
 func loadProxyMappings(reader io.Reader) ([]*ProxyMapping, error) {
