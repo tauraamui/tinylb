@@ -19,6 +19,7 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 )
 
+// matches on website.com/website.co.uk or localhost|:8080
 var domainNameRegex = regexp.MustCompile(`([a-zA-Z]+(\.[a-zA-Z]{2,}){1,}|localhost(\:[0-9]+){0,})`)
 
 type ProxyMapping struct {
@@ -45,7 +46,9 @@ func loadProxyMappings(reader io.Reader) ([]*ProxyMapping, error) {
 		if len(values) > 0 {
 			proxyMapping := &ProxyMapping{}
 
+			// index to use to offset the string slice lookup
 			proxyDirectiveLookupIndex := 0
+			// the first word of the line is a domain name and not the proxy directive
 			if domainNameRegex.MatchString(strings.ToLower(values[0])) {
 				proxyMapping.DomainContext = values[proxyDirectiveLookupIndex]
 				proxyDirectiveLookupIndex++
