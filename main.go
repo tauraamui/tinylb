@@ -42,6 +42,11 @@ func loadProxyMappings(reader io.Reader) ([]*ProxyMapping, error) {
 	for scanner.Scan() {
 		configLineCount++
 		configLine := scanner.Text()
+
+		if string(configLine[0:2]) == "//" {
+			continue
+		}
+
 		values := strings.Split(configLine, " ")
 		if len(values) > 0 {
 			proxyMapping := &ProxyMapping{}

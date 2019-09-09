@@ -71,13 +71,27 @@ var proxyMappingTests = []struct {
 		},
 	},
 
+	// {
+	// 	name:          "Test load proxy mapping with domain context as localhost with target uri to write to success",
+	// 	reader:        strings.NewReader("localhost:8000 proxy /webhooks/* http://localhost:9001/hooks/$1"),
+	// 	expectedError: nil,
+	// 	expectedInterface: []*ProxyMapping{
+	// 		&ProxyMapping{DomainContext: "localhost:8000", RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001", TargetURI: "/hooks/$1"},
+	// 	},
+	// },
+
 	{
-		name:          "Test load proxy mapping with domain context as localhost with target uri to write to success",
-		reader:        strings.NewReader("localhost:8000 proxy /webhooks/* http://localhost:9001/hooks/$1"),
-		expectedError: nil,
-		expectedInterface: []*ProxyMapping{
-			&ProxyMapping{DomainContext: "localhost:8000", RequestURI: "/webhooks/*", TargetURL: "http://localhost:9001", TargetURI: "/hooks/$1"},
-		},
+		name:              "Test load proxy mapping skip due to comment",
+		reader:            strings.NewReader("//localhost proxy /webhooks/* http://localhost:9001"),
+		expectedError:     nil,
+		expectedInterface: nil,
+	},
+
+	{
+		name:              "Test load proxy mapping skip due to comment with space",
+		reader:            strings.NewReader("// localhost proxy /webhooks/* http://localhost:9001"),
+		expectedError:     nil,
+		expectedInterface: nil,
 	},
 
 	{
