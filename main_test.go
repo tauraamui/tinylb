@@ -116,14 +116,14 @@ var proxyMappingTests = []struct {
 	},
 
 	{
-		name:              "Test load proxy mapping fail blank line",
+		name:              "Test load proxy mapping skip due to blank line",
 		reader:            strings.NewReader(""),
 		expectedError:     nil,
 		expectedInterface: nil,
 	},
 
 	{
-		name:              "Test load proxy mapping fail fail nil io.Reader",
+		name:              "Test load proxy mapping fail due to nil io.Reader",
 		reader:            nil,
 		expectedError:     errors.New("io.Reader instance is a nil pointer"),
 		expectedInterface: nil,
